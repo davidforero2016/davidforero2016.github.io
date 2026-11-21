@@ -1,29 +1,32 @@
 # Sitio de David Forero
 
-Sitio personal bilingüe (español en la raíz, inglés en `/en/`), hecho en HTML y CSS, sin dependencias.
+Sitio personal bilingüe sobre demografía aplicada. La versión en español está en la raíz y la versión en inglés en `/en/`. Está construido en HTML, CSS y JavaScript, sin dependencias externas, y se publica con GitHub Pages en https://davidforero2016.github.io.
 
 ## Estructura
 
-- `index.html`: versión en español (principal)
-- `en/index.html`: versión en inglés
-- `assets/style.css`: estilos (colores y tipografía al inicio del archivo)
-- `assets/favicon.svg`: ícono de la pestaña
-- `.nojekyll`: le indica a GitHub Pages que publique los archivos tal cual
+- `index.html`: versión en español (principal).
+- `en/index.html`: versión en inglés.
+- `assets/style.css`: estilos; los colores y la tipografía se definen al inicio del archivo.
+- `assets/ink.js`: trazos de tinta del encabezado, del proyecto y del contacto.
+- `assets/david-forero.jpg`: fotografía del perfil.
+- `assets/favicon.svg`: ícono de la pestaña.
+- `.nojekyll`: indica a GitHub Pages que publique los archivos sin procesarlos.
 
-## Publicar en GitHub Pages
+## Publicación
 
-1. En GitHub, crea un repositorio público llamado exactamente `davidforero2016.github.io`.
-2. Sube todos estos archivos a la raíz del repositorio, conservando las carpetas `assets` y `en`.
-3. En el repositorio, ve a Settings → Pages. En "Branch", elige `main` y la carpeta `/ (root)`, y guarda.
-4. En uno o dos minutos el sitio queda en https://davidforero2016.github.io
+El sitio se publica automáticamente desde la rama `main`, carpeta raíz (Settings → Pages). Cada cambio confirmado en el repositorio aparece en línea en uno o dos minutos.
 
-## Conectar un dominio propio (cuando lo compres)
+## Edición
 
-1. En Settings → Pages → Custom domain, escribe el dominio (por ejemplo `davidforero.com`) y guarda.
-2. En el registrador del dominio, crea los registros DNS que GitHub indica en su documentación de Pages (registros A hacia las IP de GitHub y un CNAME `www` hacia `davidforero2016.github.io`).
-3. Cuando el dominio funcione, activa "Enforce HTTPS".
+Los textos se modifican directamente en `index.html` y `en/index.html`. Cualquier cambio de contenido debe hacerse en ambos archivos para mantener las dos versiones alineadas.
+
+## Dominio propio (pendiente)
+
+1. En Settings → Pages → Custom domain, se registra el dominio (por ejemplo, `davidforero.com`).
+2. En el registrador del dominio se crean los registros DNS que indica la documentación de GitHub Pages: registros A hacia las direcciones IP de GitHub y un CNAME `www` hacia `davidforero2016.github.io`.
+3. Una vez activo el dominio, se habilita "Enforce HTTPS".
 
 ## Pendientes
 
-- Reemplazar los enlaces de las columnas por las direcciones exactas de cada artículo (hoy apuntan a la portada de Al Poniente y de Medium).
-- Agregar el enlace a LinkedIn cuando esté listo.
+- Reemplazar los enlaces de las columnas por las direcciones exactas de cada artículo; por ahora apuntan a la portada de Al Poniente y de Medium.
+- Agregar el enlace al perfil de LinkedIn.
