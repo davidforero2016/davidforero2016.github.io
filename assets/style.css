@@ -177,6 +177,8 @@ h2::after {
 .fact-list span { padding-left: 16px; position: relative; }
 .fact-list span::before { content: "•"; position: absolute; left: 2px; color: var(--steel); }
 
+#servicios .grid.two > .card:first-child { grid-column: 1 / -1; }
+
 /* ---------- Publicaciones ---------- */
 h3.sub { font-family: var(--serif); font-weight: 400; font-size: 27px; margin-top: 52px; color: var(--navy); }
 .outlets { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 18px; align-items: start; }
