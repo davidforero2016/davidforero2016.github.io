@@ -1,4 +1,4 @@
-name: Columna más reciente
+name: Columnas (portada y editorial)
 
 on:
   schedule:
@@ -16,15 +16,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Buscar la columna más reciente
+      - name: Revisar columnas en Al Poniente y Medium
         run: python .github/scripts/latest_column.py
       - name: Guardar si cambió
         run: |
-          if ! git diff --quiet -- assets/latest.json; then
+          if ! git diff --quiet -- assets/latest.json assets/columns.json; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add assets/latest.json
-            git commit -m "Columna más reciente: actualización automática"
+            git add assets/latest.json assets/columns.json
+            git commit -m "Columnas: actualización automática"
             git push
           else
             echo "Sin cambios"
