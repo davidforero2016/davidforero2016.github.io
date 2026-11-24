@@ -144,6 +144,11 @@ h2::after {
 .project .subtitle { font-family: var(--serif); font-size: 21px; color: var(--frost); margin: 6px 0 18px; font-style: italic; }
 .project p { color: var(--frost); }
 .project .meta { margin-top: 18px; font-size: 14px; opacity: .75; }
+.release { margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(200, 215, 230, .22); }
+.release-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--frost); opacity: .8; }
+.release h4 { font-family: var(--serif); font-weight: 400; font-size: 32px; line-height: 1.1; color: #f3f6f9; margin-top: 8px; }
+.release .release-sub { font-family: var(--serif); font-style: italic; font-size: 18px; margin: 4px 0 12px; }
+.release .btn { margin-top: 20px; }
 .soon { display: inline-block; margin-top: 22px; padding: 7px 16px; border-radius: 999px; border: 1px solid rgba(200, 215, 230, .4); font-size: 13.5px; color: #f3f6f9; }
 
 /* Columnas */
