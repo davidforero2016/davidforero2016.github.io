@@ -1,0 +1,497 @@
+<!doctype html><html lang="es"><head><meta charset=utf8><meta name="description" content="Raíces: mapa interactivo de Colombia por departamentos, 2005–2050, con datos del DANE. Un proyecto de Samon, de David Forero."><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Raíces</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera breve, pestañas, controles de año y zona; mapa a la izquierda y panel de lectura a la derecha (una columna en teléfono). */
+:root {
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --fg: #16232b;
+  --muted: #5b6b74;
+  --line: #d8e0e4;
+  --accent: #1d5c6b;          /* azul petróleo, color de marca */
+  --accent-soft: #e2eef1;
+  --map-stroke: #ffffff;
+  --map-empty: #e6eaec;
+  --focus: #e08a2e;
+  --f-display: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171c; --surface: #16222a; --fg: #e6edf0; --muted: #9db0ba; --line: #2a3a44;
+    --accent: #7cc3d1; --accent-soft: #1c3038; --map-stroke: #0f171c; --map-empty: #24323a; --focus: #f0a656;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171c; --surface: #16222a; --fg: #e6edf0; --muted: #9db0ba; --line: #2a3a44;
+  --accent: #7cc3d1; --accent-soft: #1c3038; --map-stroke: #0f171c; --map-empty: #24323a; --focus: #f0a656;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 40px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: grid; gap: 6px; }
+.home-link { font-family: var(--f-data); font-size: 12px; color: var(--muted); text-decoration: none; justify-self: start; margin-bottom: 6px; }
+.home-link:hover { color: var(--accent); text-decoration: underline; }
+.eyebrow { font-family: var(--f-data); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1; margin: 0; letter-spacing: -.02em; }
+.sub { font-family: var(--f-display); font-weight: 500; font-size: clamp(1.05rem, 2.2vw, 1.3rem); margin: 0; color: var(--muted); text-wrap: balance; }
+
+.tabs-scroll { overflow-x: auto; scrollbar-width: thin; margin-inline: -4px; padding-inline: 4px; }
+.tabs { display: flex; gap: 6px; min-width: max-content; border-bottom: 1px solid var(--line); }
+.tab {
+  font: 600 15px/1.2 var(--f-body); color: var(--muted); background: none; border: 0;
+  padding: 10px 12px 12px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap;
+}
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.tab:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, path:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.year-box { display: flex; align-items: center; gap: 12px; flex: 1 1 340px; min-width: 0; }
+.year { font: 700 2.2rem/1 var(--f-display); font-variant-numeric: tabular-nums; min-width: 3.1ch; }
+.play {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  display: grid; place-items: center; cursor: pointer; flex: none;
+}
+.play svg { width: 16px; height: 16px; fill: currentColor; }
+.slider-wrap { flex: 1; min-width: 0; display: grid; gap: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.ticks { display: flex; justify-content: space-between; font: 12px var(--f-data); color: var(--muted); }
+.zone { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.zone button { font: 600 14px var(--f-body); border: 0; background: none; color: var(--muted); padding: 8px 14px; cursor: pointer; }
+.zone button + button { border-left: 1px solid var(--line); }
+.zone button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.zone[hidden] { display: none !important; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.map-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-width: 0; }
+svg.map { width: 100%; height: auto; display: block; touch-action: manipulation; }
+svg.map path.dep { stroke: var(--map-stroke); stroke-width: .7; cursor: pointer; transition: fill .35s ease; }
+svg.map path.dep:hover { stroke: var(--fg); stroke-width: 1.2; }
+svg.map path.dep.sel { stroke: var(--fg); stroke-width: 2; }
+svg.map .inset-frame { fill: none; stroke: var(--line); }
+svg.map .inset-label { font: 10px var(--f-data); fill: var(--muted); }
+@media (prefers-reduced-motion: reduce) { svg.map path.dep { transition: none; } }
+
+.legend { display: grid; gap: 6px; margin-top: 8px; }
+.legend-title { font: 600 13px var(--f-body); color: var(--muted); }
+.legend-bar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; }
+.legend-bar span { flex: 1; }
+.legend-ticks { position: relative; height: 16px; font: 11px var(--f-data); color: var(--muted); }
+.legend-ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.legend-ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.legend-cats { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; }
+.legend-cats span { display: inline-flex; align-items: center; gap: 6px; }
+.legend-cats i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+aside { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+.panel h2 { font: 700 1.15rem/1.25 var(--f-display); margin: 0; text-wrap: balance; }
+.q { margin: 0; color: var(--muted); }
+.nat { font-size: 15px; }
+.nat strong { font-family: var(--f-data); font-weight: 500; }
+label.dep-pick { display: grid; gap: 4px; font: 600 13px var(--f-body); color: var(--muted); }
+select { font: 16px var(--f-body); padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); width: 100%; }
+.big { font: 700 2.4rem/1 var(--f-display); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.big .chip { font: 600 13px var(--f-body); padding: 3px 10px; border-radius: 999px; color: #fff; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 15px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-family: var(--f-data); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+.warn { font-size: 13px; color: var(--muted); border-left: 3px solid var(--focus); padding-left: 10px; margin: 0; }
+details.method { font-size: 14px; color: var(--muted); }
+details.method summary { cursor: pointer; font-weight: 600; color: var(--fg); }
+details.method p { margin: 8px 0 0; }
+.std { display: inline-block; font: 500 11px var(--f-data); letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 14px; }
+footer p { margin: 0; max-width: 90ch; }
+.loading { padding: 60px 0; text-align: center; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="home-link" href="../">← David Forero · Demografía aplicada</a>
+    <span class="eyebrow">Samon · Colombia por departamentos, 2005–2050</span>
+    <h1>Raíces</h1>
+    <p class="sub">El relevo generacional en el campo y la ciudad colombianos</p>
+  </header>
+
+  <div class="tabs-scroll">
+    <div class="tabs" role="tablist" aria-label="Indicadores" id="tabs"></div>
+  </div>
+
+  <div class="controls">
+    <div class="year-box">
+      <span class="year" id="yearLabel" aria-live="polite">2025</span>
+      <button class="play" id="play" type="button" aria-label="Reproducir los años">
+        <svg viewBox="0 0 16 16" id="playIcon"><path d="M3 1.5v13l11-6.5z"/></svg>
+      </button>
+      <div class="slider-wrap">
+        <input type="range" id="year" min="2005" max="2050" step="1" value="2025" aria-label="Año">
+        <div class="ticks"><span>2005</span><span id="tickMax">2050</span></div>
+      </div>
+    </div>
+    <div class="zone" id="zone" role="group" aria-label="Zona">
+      <button type="button" data-z="t" aria-pressed="true">Total</button>
+      <button type="button" data-z="u" aria-pressed="false">Urbana</button>
+      <button type="button" data-z="r" aria-pressed="false">Rural</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="map-card">
+      <svg class="map" id="map" viewBox="0 0 560 700" role="img" aria-labelledby="mapTitle">
+        <title id="mapTitle">Mapa de Colombia por departamentos</title>
+      </svg>
+      <div class="loading" id="loading">Cargando datos del DANE…</div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <aside>
+      <section class="panel" aria-labelledby="tabTitle">
+        <h2 id="tabTitle"></h2>
+        <p class="q" id="tabQuestion"></p>
+        <p class="nat" id="national"></p>
+      </section>
+
+      <section class="panel" aria-live="polite">
+        <label class="dep-pick" for="depSelect">Departamento
+          <select id="depSelect"></select>
+        </label>
+        <div class="big" id="depValue"></div>
+        <dl class="facts" id="depFacts"></dl>
+        <p class="warn" id="depWarn" hidden></p>
+      </section>
+
+      <section class="panel">
+        <details class="method" id="methodBox" open>
+          <summary>Cómo se calcula <span class="std" id="tabStd"></span></summary>
+          <div id="tabMethod"></div>
+        </details>
+      </section>
+    </aside>
+  </div>
+
+  <footer>
+    <p><strong>Fuente:</strong> DANE, retroproyecciones de población departamental por área, sexo y edad 2005–2017 y proyecciones 2018–2050 (actualización del 30 de julio de 2025), ambas con base en el CNPV 2018. Geometría: Marco Geoestadístico Nacional del DANE, versión 2025, simplificada para la web.</p>
+    <p>Urbano corresponde a cabecera municipal; rural, a centros poblados y rural disperso. El DANE publica la serie por área hasta 2045; de 2046 a 2050 solo hay total departamental. Entre 2017 y 2018 se pasa de la serie retroproyectada a la proyectada, por lo que puede haber saltos que no son cambios demográficos reales.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+(() => {
+  const loc = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["$", ""] });
+  const fInt = loc.format(",.0f"), f1 = loc.format(".1f"), fS1 = loc.format("+.1f");
+  const pct = v => f1(v) + " %";
+
+  // Paletas acordadas
+  const PURPLE = ["#e4e2e8","#d2c9dc","#bcabd0","#a48cc2","#8b6db3","#7151a2","#58378c","#3f2170"];
+  const DIV = ["#0e3f4a","#1d5c6b","#3d7d8c","#76a8b3","#b5d1d7","#efeeea","#ecd2b3","#dcae7c","#c98647","#ad6124","#7f4214"];
+  const WIN = { pre: "#9cc9e3", open: "#3f9a5b", closed: "#9a9a9a" };
+  const WIN_LABEL = { pre: "Todavía no abre", open: "Abierta", closed: "Cerrada" };
+
+  const ind = v => v && ({
+    pob: v[0], n: v[1], j: v[2], w: v[3], o: v[4],
+    jov: 100 * v[2] / v[0], ie: 100 * v[4] / v[1], rd: 100 * (v[1] + v[4]) / v[3],
+    pn: 100 * v[1] / v[0], po: 100 * v[4] / v[0]
+  });
+  const windowState = t => t.po >= 15 ? "closed" : (t.pn >= 30 ? "pre" : "open");
+  const symThresholds = s => [-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5].map(k => k * s);
+
+  const TABS = [
+    { id: "jovenes", label: "Jóvenes", zone: true, max: 2050, std: "DANE",
+      title: "Peso de los jóvenes de 15 a 29 años",
+      q: "¿Qué departamentos tienen, en proporción, más población joven?",
+      value: (U, R, T) => T && T.jov,
+      scale: d3.scaleThreshold([18, 20, 22, 24, 26, 28, 30], PURPLE),
+      legendTitle: "Jóvenes de 15 a 29 años, % de la población",
+      ends: ["Menos jóvenes", "Más jóvenes"],
+      fmt: v => pct(v),
+      method: `<p>Población de 15 a 29 años dividida entre la población total del departamento, en la zona elegida, por cien.</p>
+        <p>El rango de 15 a 29 años sale directo de los grupos quinquenales del DANE y se acerca a la definición colombiana de juventud de la Ley 1622 de 2013 (14 a 28 años). Naciones Unidas usa de 15 a 24 años con fines estadísticos, así que las cifras no son comparables con las de ese estándar.</p>` },
+    { id: "brecha-jovenes", label: "Brecha de jóvenes", zone: false, max: 2045, std: "DANE",
+      title: "Brecha de jóvenes entre campo y ciudad",
+      q: "¿El campo tiene, en proporción, más o menos jóvenes que la ciudad del mismo departamento?",
+      value: (U, R) => U && R && (R.jov - U.jov),
+      scale: d3.scaleThreshold(symThresholds(2), DIV),
+      legendTitle: "Puntos porcentuales (rural menos urbano)",
+      ends: ["Más jóvenes en la ciudad", "Más jóvenes en el campo"],
+      fmt: v => fS1(v) + " pp",
+      method: `<p>Porcentaje de jóvenes de 15 a 29 años en la zona rural menos el mismo porcentaje en la zona urbana, en puntos porcentuales.</p>
+        <p>Ocre: el campo tiene proporcionalmente más jóvenes. Azul petróleo: la ciudad tiene más. Entre más intenso el color, mayor la diferencia. Las zonas siguen la clasificación del DANE: cabecera municipal frente a centros poblados y rural disperso.</p>` },
+    { id: "envejecimiento", label: "Brecha de envejecimiento", zone: false, max: 2045, std: "Naciones Unidas",
+      title: "Brecha del índice de envejecimiento",
+      q: "¿Dónde envejece más rápido el campo que la ciudad?",
+      value: (U, R) => U && R && (R.ie - U.ie),
+      scale: d3.scaleThreshold(symThresholds(12), DIV),
+      legendTitle: "Diferencia en adultos mayores por cada 100 niños (rural menos urbano)",
+      ends: ["Ciudad más envejecida", "Campo más envejecido"],
+      fmt: v => (v > 0 ? "+" : "") + fInt(v),
+      method: `<p>Índice de envejecimiento: personas de 65 años y más por cada 100 menores de 15 años. Se calcula para la zona rural y para la urbana y se restan (rural menos urbano).</p>
+        <p>Usa el corte de 65 años de Naciones Unidas. El DANE suele publicar este índice con 60 años y más, por lo que las cifras no son directamente comparables con las suyas.</p>` },
+    { id: "dependencia", label: "Brecha de dependencia", zone: false, max: 2045, std: "Naciones Unidas",
+      title: "Brecha de la razón de dependencia",
+      q: "¿Cuántos dependientes más carga la población en edad de trabajar del campo frente a la de la ciudad?",
+      value: (U, R) => U && R && (R.rd - U.rd),
+      scale: d3.scaleThreshold(symThresholds(10), DIV),
+      legendTitle: "Diferencia en dependientes por cada 100 de 15 a 64 años (rural menos urbano)",
+      ends: ["La ciudad carga más", "El campo carga más"],
+      fmt: v => (v > 0 ? "+" : "") + fInt(v),
+      method: `<p>Razón de dependencia: menores de 15 más mayores de 64, por cada 100 personas de 15 a 64 años. Se calcula en cada zona y se restan (rural menos urbano).</p>
+        <p>Convención de Naciones Unidas (edad productiva de 15 a 64 años).</p>` },
+    { id: "rural", label: "Jóvenes en el campo", zone: false, max: 2045, std: "DANE",
+      title: "Participación rural de los jóvenes",
+      q: "De todos los jóvenes del departamento, ¿cuántos viven en el campo?",
+      value: (U, R) => U && R && (100 * R.j / (U.j + R.j) - 50),
+      shown: (U, R) => 100 * R.j / (U.j + R.j),
+      scale: d3.scaleThreshold(symThresholds(8), DIV),
+      legendTitle: "% de los jóvenes de 15 a 29 años que vive en zona rural",
+      tickShift: 50,
+      ends: ["Mayoría urbana", "Mayoría rural"],
+      fmt: v => pct(v),
+      method: `<p>Jóvenes de 15 a 29 años que viven en centros poblados y rural disperso, como porcentaje de todos los jóvenes del departamento.</p>
+        <p>El punto neutro es el 50 %. Por encima, ocre cada vez más intenso: la mayoría de los jóvenes vive en el campo. Por debajo, azul petróleo: la mayoría vive en la ciudad. Como Colombia es mayoritariamente urbana, casi todo el mapa sale azul.</p>` },
+    { id: "ventana", label: "Ventana demográfica", zone: true, max: 2050, std: "Naciones Unidas",
+      title: "Ventana demográfica",
+      q: "¿Qué departamentos tienen abierta su ventana de oportunidad demográfica en cada año?",
+      cat: true,
+      value: (U, R, T) => T && windowState(T),
+      method: `<p>Criterio de la División de Población de Naciones Unidas: la ventana está abierta cuando los menores de 15 años son menos del 30 % de la población y los de 65 años y más todavía son menos del 15 %.</p>
+        <p><strong>Todavía no abre:</strong> los menores de 15 son el 30 % o más. Hay muchos futuros trabajadores, pero hoy son dependientes. <strong>Cerrada:</strong> los mayores de 65 llegan al 15 % o más.</p>
+        <p>Es distinto de las etapas del bono que publica el DANE (tradición CEPAL), que se miden con la razón de dependencia.</p>` }
+  ];
+
+  const state = { tab: TABS[0], year: 2025, zone: "t", dep: "05", playing: null };
+  let DATA, GEO, YI, paths, nameOf;
+
+  const tabsEl = document.getElementById("tabs");
+  TABS.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.setAttribute("role", "tab"); b.id = "tab-" + t.id;
+    b.textContent = t.label; b.setAttribute("aria-selected", "false");
+    b.addEventListener("click", () => { location.hash = t.id; });
+    tabsEl.appendChild(b);
+  });
+  tabsEl.addEventListener("keydown", e => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const i = TABS.indexOf(state.tab), n = TABS.length;
+    const next = TABS[(i + (e.key === "ArrowRight" ? 1 : n - 1)) % n];
+    location.hash = next.id; document.getElementById("tab-" + next.id).focus();
+  });
+
+  const yearEl = document.getElementById("year"), yearLabel = document.getElementById("yearLabel");
+  yearEl.addEventListener("input", () => { stopPlay(); setYear(+yearEl.value); });
+  document.querySelectorAll("#zone button").forEach(b => b.addEventListener("click", () => {
+    state.zone = b.dataset.z;
+    document.querySelectorAll("#zone button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    render();
+  }));
+  const playBtn = document.getElementById("play"), playIcon = document.getElementById("playIcon");
+  playBtn.addEventListener("click", () => state.playing ? stopPlay() : startPlay());
+  function startPlay() {
+    if (state.year >= state.tab.max) setYear(2005);
+    playIcon.innerHTML = '<path d="M3 2h3.5v12H3zM9.5 2H13v12H9.5z"/>';
+    playBtn.setAttribute("aria-label", "Pausar");
+    state.playing = setInterval(() => {
+      if (state.year >= state.tab.max) return stopPlay();
+      setYear(state.year + 1);
+    }, 550);
+  }
+  function stopPlay() {
+    if (!state.playing) return;
+    clearInterval(state.playing); state.playing = null;
+    playIcon.innerHTML = '<path d="M3 1.5v13l11-6.5z"/>';
+    playBtn.setAttribute("aria-label", "Reproducir los años");
+  }
+  function setYear(y) { state.year = Math.min(y, state.tab.max); render(); }
+
+  const depSelect = document.getElementById("depSelect");
+  depSelect.addEventListener("change", () => selectDep(depSelect.value));
+  function selectDep(code) { state.dep = code; render(); }
+
+  function trio(code, i) {
+    const d = DATA.data[code];
+    return [ind(d.u[i]), ind(d.r[i]), ind(d.t[i])];
+  }
+  function zoneInd(code, i, z) { const [U, R, T] = trio(code, i); return z === "u" ? U : z === "r" ? R : T; }
+  function nationalTrio(i) {
+    const sum = z => {
+      let acc = [0, 0, 0, 0, 0];
+      for (const c in DATA.data) { const v = DATA.data[c][z][i]; if (!v) return null; acc = acc.map((a, k) => a + v[k]); }
+      return ind(acc);
+    };
+    return [sum("u"), sum("r"), sum("t")];
+  }
+  function valueFor(code, i) {
+    const t = state.tab;
+    if (t.zone) { const Z = zoneInd(code, i, state.zone); return t.value(null, null, Z); }
+    const [U, R, T] = trio(code, i); return t.value(U, R, T);
+  }
+  function colorFor(v) {
+    const t = state.tab;
+    if (v == null || Number.isNaN(v)) return "var(--map-empty)";
+    return t.cat ? WIN[v] : t.scale(v);
+  }
+
+  function render() {
+    if (!DATA) return;
+    const t = state.tab, i = YI[state.year];
+    TABS.forEach(x => document.getElementById("tab-" + x.id).setAttribute("aria-selected", x === t));
+    document.getElementById("zone").hidden = !t.zone;
+    yearEl.max = t.max; yearEl.value = state.year;
+    document.getElementById("tickMax").textContent = t.max;
+    yearLabel.textContent = state.year;
+
+    paths.attr("fill", d => colorFor(valueFor(d.id, i)))
+         .classed("sel", d => d.id === state.dep)
+         .attr("aria-label", d => nameOf(d.id));
+    paths.filter(d => d.id === state.dep).raise();
+
+    document.getElementById("tabTitle").textContent = t.title;
+    document.getElementById("tabQuestion").textContent = t.q;
+    document.getElementById("tabStd").textContent = "Lógica " + t.std;
+    document.getElementById("tabMethod").innerHTML = t.method;
+    renderNational(i); renderLegend(); renderDep(i);
+  }
+
+  const zoneName = { t: "total", u: "urbana", r: "rural" };
+  function renderNational(i) {
+    const t = state.tab, el = document.getElementById("national");
+    const [U, R, T] = nationalTrio(i);
+    let html;
+    if (t.cat) {
+      const c = { pre: 0, open: 0, closed: 0 };
+      for (const code in DATA.data) { const v = valueFor(code, i); if (v) c[v]++; }
+      html = `En ${state.year}, zona ${zoneName[state.zone]}: <strong>${c.open}</strong> departamentos con la ventana abierta, <strong>${c.pre}</strong> que todavía no la abren y <strong>${c.closed}</strong> con la ventana cerrada.`;
+    } else if (t.zone) {
+      const Z = state.zone === "u" ? U : state.zone === "r" ? R : T;
+      html = `Colombia en ${state.year}, zona ${zoneName[state.zone]}: <strong>${pct(Z.jov)}</strong> de la población tiene entre 15 y 29 años.`;
+    } else {
+      const v = t.shown ? t.shown(U, R) : t.value(U, R, T);
+      html = `Colombia en ${state.year}: <strong>${t.fmt(v)}</strong>.`;
+    }
+    el.innerHTML = html;
+  }
+
+  function renderLegend() {
+    const t = state.tab, el = document.getElementById("legend");
+    if (t.cat) {
+      el.innerHTML = `<div class="legend-cats">${["pre", "open", "closed"].map(k =>
+        `<span><i style="background:${WIN[k]}"></i>${WIN_LABEL[k]}</span>`).join("")}<span><i style="background:var(--map-empty)"></i>Sin dato</span></div>`;
+      return;
+    }
+    const cols = t.scale.range(), th = t.scale.domain(), n = cols.length, shift = t.tickShift || 0;
+    const tickFmt = v => (t.id === "jovenes" || t.id === "rural") ? f1(v + shift).replace(",0", "") : (v > 0 ? "+" : "") + loc.format(".0f")(v);
+    const keep = n > 9 ? [0, 2, 4, 5, 7, 9] : th.map((_, k) => k);
+    const ticks = th.map((v, k) => ({ v, k })).filter(({ k }) => keep.includes(k));
+    el.innerHTML = `<div class="legend-title">${t.legendTitle}</div>
+      <div class="legend-bar">${cols.map(c => `<span style="background:${c}"></span>`).join("")}</div>
+      <div class="legend-ticks">${ticks.map(({ v, k }) => `<span style="left:${(100 * (k + 1) / n).toFixed(2)}%">${tickFmt(v)}</span>`).join("")}</div>
+      <div class="legend-ends"><span>${t.ends[0]}</span><span>${t.ends[1]}</span></div>`;
+  }
+
+  function fact(k, v) { return `<dt>${k}</dt><dd>${v}</dd>`; }
+  function renderDep(i) {
+    const t = state.tab, code = state.dep, [U, R, T] = trio(code, i);
+    depSelect.value = code;
+    const big = document.getElementById("depValue"), facts = document.getElementById("depFacts"), warn = document.getElementById("depWarn");
+    warn.hidden = true;
+    if (!t.zone && !U) {
+      big.textContent = "Sin dato";
+      facts.innerHTML = fact("Población total", fInt(T.pob));
+      warn.textContent = "El DANE no publica la serie por área (urbano y rural) después de 2045.";
+      warn.hidden = false; return;
+    }
+    if (t.cat) {
+      const Z = zoneInd(code, i, state.zone), s = windowState(Z);
+      big.innerHTML = `<span class="chip" style="background:${WIN[s]};${s === "pre" ? "color:#0e3f4a" : ""}">${WIN_LABEL[s]}</span>`;
+      facts.innerHTML = fact("Menores de 15 años", `${pct(Z.pn)} <span style="color:var(--muted)">(umbral 30 %)</span>`)
+        + fact("65 años y más", `${pct(Z.po)} <span style="color:var(--muted)">(umbral 15 %)</span>`)
+        + fact("Población, zona " + zoneName[state.zone], fInt(Z.pob));
+    } else if (t.zone) {
+      const Z = zoneInd(code, i, state.zone);
+      big.textContent = pct(Z.jov);
+      facts.innerHTML = fact("Jóvenes de 15 a 29", fInt(Z.j)) + fact("Población, zona " + zoneName[state.zone], fInt(Z.pob));
+    } else {
+      const v = t.shown ? t.shown(U, R) : t.value(U, R, T);
+      big.textContent = t.fmt(v);
+      if (t.id === "brecha-jovenes") facts.innerHTML = fact("Jóvenes, zona rural", pct(R.jov)) + fact("Jóvenes, zona urbana", pct(U.jov));
+      if (t.id === "envejecimiento") facts.innerHTML = fact("Índice rural", fInt(R.ie)) + fact("Índice urbano", fInt(U.ie));
+      if (t.id === "dependencia") facts.innerHTML = fact("Razón rural", fInt(R.rd)) + fact("Razón urbana", fInt(U.rd));
+      if (t.id === "rural") facts.innerHTML = fact("Jóvenes rurales", fInt(R.j)) + fact("Jóvenes urbanos", fInt(U.j));
+      facts.innerHTML += fact("Población rural", fInt(R.pob));
+    }
+    const Zr = t.zone ? (state.zone === "r" ? R : null) : R;
+    if (Zr && Zr.pob < 50000) {
+      warn.textContent = `La población rural de ${nameOf(code)} es pequeña (${fInt(Zr.pob)} personas), así que sus porcentajes cambian mucho con pocas personas.`;
+      warn.hidden = false;
+    }
+  }
+
+  function draw() {
+    const svg = d3.select("#map"), W = 560, H = 700;
+    const main = { type: "FeatureCollection", features: GEO.features.filter(f => f.id !== "88") };
+    // San Andrés: el recuadro muestra las tres islas habitadas (San Andrés, Providencia y Santa Catalina), sin los cayos lejanos
+    const saiFull = GEO.features.find(f => f.id === "88");
+    const islands = saiFull.geometry.coordinates
+      .map(c => ({ c, a: d3.geoArea({ type: "Polygon", coordinates: c }) }))
+      .sort((p, q) => q.a - p.a).slice(0, 3).map(p => p.c);
+    const sai = { type: "Feature", id: "88", geometry: { type: "MultiPolygon", coordinates: islands } };
+    GEO.features[GEO.features.indexOf(saiFull)] = sai;
+    const proj = d3.geoMercator().fitExtent([[10, 10], [W - 10, H - 10]], main);
+    const box = [[14, 14], [104, 150]];
+    const projI = d3.geoMercator().fitExtent([[box[0][0] + 8, box[0][1] + 8], [box[1][0] - 8, box[1][1] - 22]], sai);
+    svg.append("rect").attr("class", "inset-frame").attr("x", box[0][0]).attr("y", box[0][1])
+      .attr("width", box[1][0] - box[0][0]).attr("height", box[1][1] - box[0][1]).attr("rx", 6);
+    svg.append("text").attr("class", "inset-label").attr("x", (box[0][0] + box[1][0]) / 2).attr("y", box[1][1] - 8)
+      .attr("text-anchor", "middle").text("San Andrés");
+    const pathMain = d3.geoPath(proj), pathI = d3.geoPath(projI);
+    paths = svg.append("g").selectAll("path").data(GEO.features).join("path")
+      .attr("class", "dep").attr("d", d => d.id === "88" ? pathI(d) : pathMain(d))
+      .attr("tabindex", 0).attr("role", "button")
+      .on("click", (e, d) => selectDep(d.id))
+      .on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectDep(d.id); } });
+    paths.append("title").text(d => nameOf(d.id));
+  }
+
+  function route() {
+    const id = location.hash.slice(1);
+    const t = TABS.find(x => x.id === id) || TABS[0];
+    if (t !== state.tab) stopPlay();
+    state.tab = t;
+    if (state.year > t.max) state.year = t.max;
+    render();
+  }
+  window.addEventListener("hashchange", route);
+
+  Promise.all([fetch("data/pob.json").then(r => r.json()), fetch("data/dptos.json").then(r => r.json())])
+    .then(([pob, geo]) => {
+      DATA = pob; GEO = geo;
+      YI = Object.fromEntries(pob.years.map((y, i) => [y, i]));
+      const short = { "11": "Bogotá, D.C.", "88": "San Andrés, Providencia y Santa Catalina" };
+      nameOf = c => short[c] || pob.names[c];
+      Object.keys(pob.names).sort((a, b) => nameOf(a).localeCompare(nameOf(b), "es")).forEach(c => {
+        const o = document.createElement("option"); o.value = c; o.textContent = nameOf(c); depSelect.appendChild(o);
+      });
+      document.getElementById("loading").remove();
+      draw(); route();
+    })
+    .catch(() => { document.getElementById("loading").textContent = "No se pudieron cargar los datos. Recarga la página para intentarlo de nuevo."; });
+})();
+</script>
+
+</body></html>
