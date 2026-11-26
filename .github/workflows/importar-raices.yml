@@ -1,0 +1,28 @@
+name: Importar Raíces (una sola vez)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar y verificar el paquete de Raíces
+        run: |
+          curl -fsSL -o /tmp/raices.zip "https://drive.usercontent.google.com/download?id=1k2Qi1ASdWvej61stRgo1Xo_yQCnAHEgt&export=download&confirm=t"
+          ls -l /tmp/raices.zip
+          echo "06f9cab0b4757f40e94d74a38c3b73ffb969ccce215c3777e2c69c93eb54d090  /tmp/raices.zip" | sha256sum -c -
+          mkdir -p raices
+          unzip -o /tmp/raices.zip -d raices
+          sha256sum raices/data/pob.json raices/data/dptos.json
+      - name: Guardar en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add raices
+          git commit -m "Raíces: publicado en el sitio"
+          git push
