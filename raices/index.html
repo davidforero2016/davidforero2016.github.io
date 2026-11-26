@@ -303,11 +303,11 @@ footer p { margin: 0; max-width: 90ch; }
   const playBtn = document.getElementById("play"), playIcon = document.getElementById("playIcon");
   playBtn.addEventListener("click", () => state.playing ? stopPlay() : startPlay());
   function startPlay() {
-    if (state.year >= state.tab.max) setYear(2005);
+    if (state.year >= maxYear()) setYear(2005);
     playIcon.innerHTML = '<path d="M3 2h3.5v12H3zM9.5 2H13v12H9.5z"/>';
     playBtn.setAttribute("aria-label", "Pausar");
     state.playing = setInterval(() => {
-      if (state.year >= state.tab.max) return stopPlay();
+      if (state.year >= maxYear()) return stopPlay();
       setYear(state.year + 1);
     }, 550);
   }
@@ -317,7 +317,10 @@ footer p { margin: 0; max-width: 90ch; }
     playIcon.innerHTML = '<path d="M3 1.5v13l11-6.5z"/>';
     playBtn.setAttribute("aria-label", "Reproducir los años");
   }
-  function setYear(y) { state.year = Math.min(y, state.tab.max); render(); }
+  // Urbano y rural solo llegan a 2045 (el DANE no publica la serie por área después)
+  const AREA_MAX = 2045;
+  const maxYear = () => (state.tab.zone && state.zone !== "t") ? Math.min(state.tab.max, AREA_MAX) : state.tab.max;
+  function setYear(y) { state.year = Math.min(y, maxYear()); render(); }
 
   const depSelect = document.getElementById("depSelect");
   depSelect.addEventListener("change", () => selectDep(depSelect.value));
@@ -352,8 +355,9 @@ footer p { margin: 0; max-width: 90ch; }
     const t = state.tab, i = YI[state.year];
     TABS.forEach(x => document.getElementById("tab-" + x.id).setAttribute("aria-selected", x === t));
     document.getElementById("zone").hidden = !t.zone;
-    yearEl.max = t.max; yearEl.value = state.year;
-    document.getElementById("tickMax").textContent = t.max;
+    const yMax = maxYear(); if (state.year > yMax) state.year = yMax;
+    yearEl.max = yMax; yearEl.value = state.year;
+    document.getElementById("tickMax").textContent = yMax;
     yearLabel.textContent = state.year;
 
     paths.attr("fill", d => colorFor(valueFor(d.id, i)))
