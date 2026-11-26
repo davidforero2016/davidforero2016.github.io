@@ -352,10 +352,11 @@ footer p { margin: 0; max-width: 90ch; }
 
   function render() {
     if (!DATA) return;
-    const t = state.tab, i = YI[state.year];
+    const t = state.tab, yMax = maxYear();
+    if (state.year > yMax) state.year = yMax;
+    const i = YI[state.year];
     TABS.forEach(x => document.getElementById("tab-" + x.id).setAttribute("aria-selected", x === t));
     document.getElementById("zone").hidden = !t.zone;
-    const yMax = maxYear(); if (state.year > yMax) state.year = yMax;
     yearEl.max = yMax; yearEl.value = state.year;
     document.getElementById("tickMax").textContent = yMax;
     yearLabel.textContent = state.year;
